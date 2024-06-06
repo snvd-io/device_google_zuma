@@ -1979,7 +1979,7 @@ static const int MODE_CHARGING_ONLY_WHEN_LOCKED_AFU = 3;
 static const int MODE_ENABLED = 4;
 
 UsbExt::UsbExt(std::shared_ptr<Usb> usb) : mUsb(usb) {
-    int initialMode = ::android::base::GetIntProperty("persist.security.usb_mode", MODE_CHARGING_ONLY_WHEN_LOCKED_AFU);
+    int initialMode = ::android::base::GetIntProperty("persist.security.usb_mode", MODE_CHARGING_ONLY_WHEN_LOCKED);
     ALOGD("initial persist.security.usb_mode: %i", initialMode);
 
     switch (initialMode) {
