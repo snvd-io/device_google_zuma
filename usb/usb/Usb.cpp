@@ -1937,7 +1937,11 @@ int UsbExt::setPortSecurityStateInner(PortSecurityState in_state) {
     string ccToggleEnablePath = kI2CPath + path + "/" + path + kCcToggleEnable;
     string dataPathEnablePath = kI2CPath + path + "/" + path + kDataPathEnable;
 
-    string denyNewUsbProp = "security.deny_new_usb2";
+    bool denyNewUsbWriteResult = SetProperty("security.deny_new_usb2",
+                                             in_state == PortSecurityState::ENABLED ? "0" : "1");
+    if (!denyNewUsbWriteResult) {
+        ALOGE("unable to update security.deny_new_usb2 sysprop");
+    }
 
     // '&' is used instead of '&&' intentionally to disable short-circuit evaluation
 
@@ -1945,43 +1949,35 @@ int UsbExt::setPortSecurityStateInner(PortSecurityState in_state) {
         case PortSecurityState::DISABLED: {
             if (WriteStringToFileOrLog("0", ccToggleEnablePath)
                     & WriteStringToFileOrLog("0", dataPathEnablePath)) {
-                if (!SetProperty(denyNewUsbProp, "1")) {
-                    return IUsbExt::ERROR_DENY_NEW_USB_WRITE;
-                }
-                return IUsbExt::NO_ERROR;
+                break;
             }
             return IUsbExt::ERROR_FILE_WRITE;
         }
         case PortSecurityState::CHARGING_ONLY_IMMEDIATE: {
             if (WriteStringToFileOrLog("0", dataPathEnablePath)
                     & WriteStringToFileOrLog("1", ccToggleEnablePath)) {
-                if (!SetProperty(denyNewUsbProp, "1")) {
-                    return IUsbExt::ERROR_DENY_NEW_USB_WRITE);
-                }
-                return IUsbExt::NO_ERROR;
+                break;
             }
             return IUsbExt::ERROR_FILE_WRITE;
         }
         case PortSecurityState::CHARGING_ONLY: {
             if (WriteStringToFileOrLog("-1", dataPathEnablePath)
                     & WriteStringToFileOrLog("1", ccToggleEnablePath)) {
-                if (!SetProperty(denyNewUsbProp, "1")) {
-                    return IUsbExt::ERROR_DENY_NEW_USB_WRITE;
-                }
-                return IUsbExt::NO_ERROR;
+                break;
             }
             return IUsbExt::ERROR_FILE_WRITE;
         }
         case PortSecurityState::ENABLED: {
             if (WriteStringToFileOrLog("1", dataPathEnablePath)
                     & WriteStringToFileOrLog("1", ccToggleEnablePath)) {
-                if (!SetProperty(denyNewUsbProp, "0")) {
-                    return IUsbExt::ERROR_DENY_NEW_USB_WRITE;
-                }
-                return IUsbExt::NO_ERROR;
+                break;
             }
             return IUsbExt::ERROR_FILE_WRITE;
         }
+    }
+
+    if (!denyNewUsbWriteResult) {
+        return IUsbExt::ERROR_DENY_NEW_USB_WRITE;
     }
 
     return IUsbExt::NO_ERROR;
